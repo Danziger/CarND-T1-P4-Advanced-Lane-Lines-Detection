@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+import src.helpers.cameraCalibration as C
+
 
 def getFirstTime(binary_warped, hist_slice=2, nwindows = 12, minpix = 60, margin = 100):
     # Choose the number of sliding windows
@@ -99,7 +101,7 @@ def getFirstTime(binary_warped, hist_slice=2, nwindows = 12, minpix = 60, margin
     return left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy, out_img, leftx, rightx, lefty, righty
 
 
-def getFromRegion(binary_warped, left_fit, right_fit, margin = 100):
+def getFromRegion(binary_warped, coefs_L, coefs_R, margin = 100):
     # Assume you now have a new warped binary image 
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
@@ -107,13 +109,13 @@ def getFromRegion(binary_warped, left_fit, right_fit, margin = 100):
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
     
-    left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy + 
-        left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) + 
-        left_fit[1]*nonzeroy + left_fit[2] + margin))) 
+    left_lane_inds = ((nonzerox > (coefs_L[0]*(nonzeroy**2) + coefs_L[1]*nonzeroy + 
+        coefs_L[2] - margin)) & (nonzerox < (coefs_L[0]*(nonzeroy**2) + 
+        coefs_L[1]*nonzeroy + coefs_L[2] + margin))) 
 
-    right_lane_inds = ((nonzerox > (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy + 
-        right_fit[2] - margin)) & (nonzerox < (right_fit[0]*(nonzeroy**2) + 
-        right_fit[1]*nonzeroy + right_fit[2] + margin)))  
+    right_lane_inds = ((nonzerox > (coefs_R[0]*(nonzeroy**2) + coefs_R[1]*nonzeroy + 
+        coefs_R[2] - margin)) & (nonzerox < (coefs_R[0]*(nonzeroy**2) + 
+        coefs_R[1]*nonzeroy + coefs_R[2] + margin)))  
 
     # Again, extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
@@ -122,13 +124,13 @@ def getFromRegion(binary_warped, left_fit, right_fit, margin = 100):
     righty = nonzeroy[right_lane_inds]
     
     # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    coefs_L = np.polyfit(lefty, leftx, 2)
+    coefs_R = np.polyfit(righty, rightx, 2)
     
     # Generate x and y values for plotting
     ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0] )
-    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    left_fitx = coefs_L[0]*ploty**2 + coefs_L[1]*ploty + coefs_L[2]
+    right_fitx = coefs_R[0]*ploty**2 + coefs_R[1]*ploty + coefs_R[2]
     
     # Create an image to draw on and an image to show the selection window
     out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
@@ -153,7 +155,7 @@ def getFromRegion(binary_warped, left_fit, right_fit, margin = 100):
     cv2.fillPoly(window_img, np.int_([right_line_pts]), (0,255, 0))
     out_img = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
     
-    return left_fit, right_fit, left_lane_inds, right_lane_inds, nonzerox, nonzeroy, out_img, ploty, left_fitx, right_fitx, leftx, rightx, lefty, righty
+    return coefs_L, coefs_R, left_lane_inds, right_lane_inds, nonzerox, nonzeroy, out_img, ploty, left_fitx, right_fitx, leftx, rightx, lefty, righty
 
 
 # TODO: Probably, it's better to do it in a different way for the harder video: An insightful student has suggested an
@@ -178,3 +180,58 @@ def getRadius(ploty, leftx, rightx, lefty, righty):
     
     return left_curverad, right_curverad
 
+
+def getDistanceFromCenter(coefs_L, coefs_R, screen_center, y = 0, m_per_px_x = 1):
+    lx_at_y = np.polyval(coefs_L, y)
+    rx_at_y = np.polyval(coefs_R, y)
+    
+    lane_center = (lx_at_y + rx_at_y) / 2
+    
+    deviation = screen_center - lane_center
+    
+    # Return value in px and m
+    return deviation, deviation * m_per_px_x
+
+
+def drawOverlay(warped, undist, Minv, left_fitx, right_fitx, ploty, size):
+    # Create an image to draw the lines on
+    warp_zero = np.zeros_like(warped).astype(np.uint8)
+    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+    cv2.polylines(color_warp, np.int32([pts_left]), isClosed=False, color=(255,0,0), thickness=16)
+    cv2.polylines(color_warp, np.int32([pts_right]), isClosed=False, color=(255,0,0), thickness=16)
+
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    newwarp = C.warper(color_warp, Minv, size)
+    
+    # Combine the result with the original image
+    return cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+
+
+def drawOverlayLane(warped, undist, Minv, left_fitx, right_fitx, ploty, size, radius, deviation):
+    img = drawOverlay(warped, undist, Minv, left_fitx, right_fitx, ploty, size)
+    
+    return drawOverlayInfo(img, radius, deviation)
+
+
+def drawOverlayInfo(img, radius, deviation):
+    side = 'OK'
+    
+    if deviation <= 0.005:
+        side = 'LEFT'
+    elif deviation >= 0.005:
+        side = 'RIGHT'
+    
+    text = 'LANE RADIUS: %.2f KM  DEVIATION FROM CENTER: %.2f M %s' % (radius/1000, abs(deviation), side)
+    
+    cv2.rectangle(img, (0, 0), (1080, 85), (0, 0, 0), cv2.FILLED)
+    cv2.putText(img, text, (30, 55), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2, cv2.LINE_AA)
+
+    return img
