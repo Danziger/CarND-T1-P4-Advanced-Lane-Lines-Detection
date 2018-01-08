@@ -4,6 +4,7 @@ CarND · T1 · P4 · Lane Lines Detection Project Writeup
 
 [//]: # (Image References)
 
+[image0]: ./output/images/001%20-%20Example%20Output.png "Example Output"
 [image1]: ./output/images/002%20-%20Undistorted%20Image.png "Undistorted Image"
 [image2]: ./output/images/003%20-%20Undistorted%20Road%20Image.png "Undistorted Road Image"
 [image3]: ./output/images/004%20-%20Binary%20Road.png "Binary Road"
@@ -136,28 +137,50 @@ Once the pixels for each lane line have been selected, a second order polynomial
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+Both calculations are implemented in [`src/helpers/laneFinder.py`](src/helpers/laneFinder.py).
+
+The radius is calculated by the `getRadius` function, that given the lane lines' pixels coordinates, it will convert them to meters using a conversion rate that has been calculated based on the dimensions of the warped image and estimations of the lane's dimensions, and fit a new polynomial to them. Using this new polynomial, it can calculate its curvature, as explained [here](https://www.intmath.com/applications-differentiation/8-radius-curvature.php).
+
+The deviation of the vehicle with respect to the center is calculated in the `getDistanceFromCenter` function, that given the two polynomials, one for each of the two lane lines, it will calculate their value at the bottom of the image, their average (middle point) and the deviation of this point with respect to the center of the image (half its width).
 
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+Again, in [`src/helpers/laneFinder.py:198 - 239`](src/helpers/laneFinder.py), there are 3 functions, `drawOverlay`, `drawOverlayLane` and `drawOverlayInfo`, that will plot the lane back onto the original image, using an inverse perpective transformation, and will also overlay the radius of curvature of the road and the deviation of the vehicle with respect to the center.
 
-![alt text][image6]
+The final output looks like this:
 
+![Example Output][image0]
 
----
 
 ### Pipeline (video)
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](output/videos/004%20-%20Advanced%20Project.mp4)
 
----
 
 ### Discussion
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+There are many things that could be improved in this project, but due to time constraints it was not possible.
+
+The various methods that have been tested and discarded to preprocess/filter the images could probably be helpful after investing a bit more time to find proper parameters and combinations for them. The ones that are currently used could also be adjusted better to produce less noise.
+
+Also, their params could be adjusted dinamically based on some properties of the image or conditions. For example, the color filters could be adjusted depending on the brightness of the image.
+
+Regarding the sliding window method that was used, it has some limitations:
+
+- The fixed size of the window makes it work poorly on really curvy roads where the lane lines can look almost horitzontal, as the windows don't move fast enough to keep up with the line's inclination. Dinamically setting their size could be an option.
+- The peaks in the histogram used to determine the starting position for the windows assume there's one lane line on each half of the image, but in really curvy roads both lane lines could be on the same side.
+
+  A better approach would be to look for either pairs of peaks that are separated by approximately the width of the lane from each other or single peaks that are separated by approximately the width of the lane from the border of the image (in really sharp turns, the inner lane line might not appear in the image).
+  
+  Also, the same peaks should appear in multiple horitzontal portions of the image if they actually belong to the lane lines. This could be used to make the detection more robust, filter out invalid peaks that do not belong to a lane line or even detect an arbiratry number of lanes.
+  
+Lastly, regarding the Line class, while it already helps getting a smoother result in the videos, its implementation is quite basic and could be improved a lot.
+
+Moreover, the project's code is currently quite messy and could be better organised, simplified, DRYed and improved in general to make it more performant, robust and maintainable, apart from the possible improvements in the current implementations.
+
+
