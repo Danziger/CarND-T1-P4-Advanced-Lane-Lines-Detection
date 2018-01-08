@@ -6,7 +6,7 @@ CarND · T1 · P4 · Lane Lines Detection Project Writeup
 
 [image1]: ./output/images/002%20-%20Undistorted%20Image.png "Undistorted Image"
 [image2]: ./output/images/003%20-%20Undistorted%20Road%20Image.png "Undistorted Road Image"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
+[image3]: ./output/images/004%20-%20Road%20Binary.png "Road Binary"
 [image4]: ./examples/warped_straight_lines.jpg "Warp Example"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
@@ -77,9 +77,32 @@ To demonstrate this step, I will describe how I apply the distortion correction 
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+All these transforms to convert a raw image into a bird's eye view perspective are implemented in `src/helpers/imagePreprocessingPipeline.py`, in a function `pipeline`, that takes an already undistorted image `img` and a transform matrix `M` as arguments.
 
-![alt text][image3]
+The steps that follow are:
+
+1. Generate grayscale and HLS versions of that initial image to use them as inputs for the transforms that follow (lines `11 - 14`).
+
+2. Generates a binary image applying 2 color filters (white and yellow) to the HLS image (line `16`) on all 3 channels at the same time.
+
+3. Generates two more binary images applying [Laplacian](https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_imgproc/py_gradients/py_gradients.html#laplacian-derivatives) to the grayscale and HLS S-channel verions of the image (lines `18 - 19`) and blurs them to filer out some noise (lines `21 - 22`).
+
+4. Next, all 3 binary images are combined using different thresholds: `(hls_yw_filter == 1) | (laplacianSBlur >= 0.75) | (laplacianBlur >= 0.75)` (lines `24 - 25`).
+
+5. A region of interest filter is applied to filter out the top half of the image approximately, the hood of the car and a small portion of the sides of the road.
+
+The output of the 4th step looks like this:
+
+![Road Binary][image3]
+
+Detailed examples of each step with a wide range of images can be found in [`src/notebooks/Image Preprocessing and Perspective Transformations.ipynb`](src/notebooks/Image%20Preprocessing%20and%20Perspective%20Transformations.ipynb), where multiple options for each step have been considered, tested and calibrated until the result explained above was obtained.
+
+It's worth mentioning that due to time constraints, some options were considered but not tested enough to be able to achieve good results with them, so they were discarded not used in the final pipeline, even though they could probably help improve the current implementation, which is quite noisy. Some of these features are :
+
+- Histogram equalization (code removed).
+- Contrast augmentation (`src/helpers/imageProcessing.py:34 - 42`, used in the 2nd section of the Notebook).
+- Alternative color spaces (`CIELAB`, in the 2nd section of the Notebook).
+- X and Y sobels, sobel magnitude and sobel direction have been implemented in `src/helpers/imageProcessing.py:144 - 180` and have been compared with Laplacian in the 4th section of the Notebook, but Laplacian did a better job than those other options without too much tunning.
 
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
