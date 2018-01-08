@@ -1,4 +1,4 @@
-CarND · T1 · P1 · Advanced Lane Lines Detection Project
+CarND · T1 · P4 · Advanced Lane Lines Detection Project
 =======================================================
 
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
