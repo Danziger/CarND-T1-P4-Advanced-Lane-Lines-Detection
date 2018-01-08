@@ -4,7 +4,7 @@ CarND · T1 · P4 · Lane Lines Detection Project Writeup
 
 [//]: # (Image References)
 
-[image1]: ./output/images/Undistored%20Image.png "Undistorted Image"
+[image1]: ./output/images/002%20-%20Undistored%20Image.png "Undistorted Image"
 [image2]: ./test_images/test1.jpg "Road Transformed"
 [image3]: ./examples/binary_combo_example.jpg "Binary Example"
 [image4]: ./examples/warped_straight_lines.jpg "Warp Example"
