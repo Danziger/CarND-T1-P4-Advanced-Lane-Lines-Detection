@@ -8,9 +8,8 @@ CarND · T1 · P4 · Lane Lines Detection Project Writeup
 [image2]: ./output/images/003%20-%20Undistorted%20Road%20Image.png "Undistorted Road Image"
 [image3]: ./output/images/004%20-%20Binary%20Road.png "Binary Road"
 [image4]: ./output/images/005%20-%20Warped%20Road.png "Warped Road"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
+[image5]: ./output/images/006%20-%20Fitting%20a%20Polynomial%20From%20Histogram%20Peaks.png "Fitting a Polynomial From Histogram Peaks"
+[image6]: ./output/images/007%20-%20Fitting%20a%20Polynomial%20From%20Previous%20One.png "Fitting a Polynomial From Previous One"
 
 
 Project Goals
@@ -118,9 +117,21 @@ Both the matrix calculation (`getM`) and the perpective transform (`warper`) hav
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+This has been implemented in a second `pipeline` function in [`src/helpers/polyFitPipeline.py:44 - 109`](src/helpers/polyFitPipeline.py) and multiple examples can be found in [`src/notebooks/Lane Detection (Polynomial).ipynb`](src/notebooks/Lane Detection (Polynomial).ipynb).
 
-![alt text][image5]
+The actual implementation is in [`src/helpers/laneFinder.py`](src/helpers/laneFinder.py), in the functions `getFirstTime` and `getFromRegion`.
+
+The first one uses a sliding window to decide which pixels belong to the lane line and uses peaks in the right and left half of the histogram of a especific region of the image (bottom 1/N portion, where N can be adjusted manually) to determine the initial location for the windows.
+
+In the following images we can see the original image, the warped binary with the histogram on top, the sliding window search with the pixels that are assigned to each of the lane lines and the final result of the identified lane:
+
+![Fitting a Polynomial From Histogram Peaks][image5]
+
+The second one uses the polynomial fitted to the previous image and a margin to decide which pixels belong to the each lane line, assuming lane lines in consecutive images should be quite similar:
+
+![Fitting a Polynomial From Previous One][image6]
+
+Once the pixels for each lane line have been selected, a second order polynomial is fitted using `np.polyfit(Y, X, 2)`
 
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
