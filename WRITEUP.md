@@ -6,8 +6,8 @@ CarND · T1 · P4 · Lane Lines Detection Project Writeup
 
 [image1]: ./output/images/002%20-%20Undistorted%20Image.png "Undistorted Image"
 [image2]: ./output/images/003%20-%20Undistorted%20Road%20Image.png "Undistorted Road Image"
-[image3]: ./output/images/004%20-%20Road%20Binary.png "Road Binary"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
+[image3]: ./output/images/004%20-%20Binary%20Road.png "Binary Road"
+[image4]: ./output/images/005%20-%20Warped%20Road.png "Warped Road"
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
@@ -93,11 +93,11 @@ The steps that follow are:
 
 The output of the 4th step looks like this:
 
-![Road Binary][image3]
+![Binary Road][image3]
 
 Detailed examples of each step with a wide range of images can be found in [`src/notebooks/Image Preprocessing and Perspective Transformations.ipynb`](src/notebooks/Image%20Preprocessing%20and%20Perspective%20Transformations.ipynb), where multiple options for each step have been considered, tested and calibrated until the result explained above was obtained.
 
-It's worth mentioning that due to time constraints, some options were considered but not tested enough to be able to achieve good results with them, so they were discarded not used in the final pipeline, even though they could probably help improve the current implementation, which is quite noisy. Some of these features are :
+It's worth mentioning that due to time constraints, some options were considered but not tested enough to be able to achieve good results with them, so they were discarded and not used in the final pipeline, even though they could probably help improve the current implementation, which is quite noisy. Some of these features are :
 
 - Histogram equalization (code removed).
 - Contrast augmentation (`src/helpers/imageProcessing.py:34 - 42`, used in the 2nd section of the Notebook).
@@ -107,33 +107,13 @@ It's worth mentioning that due to time constraints, some options were considered
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+Again, the perpective transform has been used in `src/helpers/imagePreprocessingPipeline.py:37` as part of the image-processing pipeline and in the last step of [`src/notebooks/Image Preprocessing and Perspective Transformations.ipynb`](src/notebooks/Image%20Preprocessing%20and%20Perspective%20Transformations.ipynb) to provide some examples and visualizations of what it is actually doing:
 
-```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-```
+![Warped Road][image4]
 
-This resulted in the following source and destination points:
+In this last section you can also see how the source `src` and destination `dst` points that are used to generate the transform matrix `M` (and its inverse) are calculated based on the dimensions of the image. This matrix is only computed once in this Notebook and another one in [`src/notebooks/Video Processing.ipynb`](src/notebooks/Video%20Processing.ipynb) and is later reused all the times a perpective transformation needs to be performed.
 
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
-
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
-
-![alt text][image4]
+Both the matrix calculation (`getM`) and the perpective transform (`warper`) have been implemented in [`src/helpers/cameraCalibration.py`](src/helpers/cameraCalibration.py) and are just wrappers around `cv2`'s functionality.
 
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
