@@ -179,7 +179,7 @@ Regarding the sliding window method that was used, it has some limitations:
   
   Also, the same peaks should appear in multiple horitzontal portions of the image if they actually belong to the lane lines. This could be used to make the detection more robust, filter out invalid peaks that do not belong to a lane line or even detect an arbiratry number of lanes.
   
-Lastly, regarding the Line class, while it already helps getting a smoother result in the videos, its implementation is quite basic and could be improved a lot.
+Lastly, regarding the Line class, while it already helps getting a smoother result in the videos, its implementation is quite basic and could be improved a lot. Also, the current implementation will fail to properly fit a polynomial, even if the lane lines are clearly visible and properly filtered, in consecutive turns, where a higher order polynomial should be used instead.
 
 Moreover, the project's code is currently quite messy and could be better organised, simplified, DRYed and improved in general to make it more performant, robust and maintainable, apart from the possible improvements in the current implementations.
 
