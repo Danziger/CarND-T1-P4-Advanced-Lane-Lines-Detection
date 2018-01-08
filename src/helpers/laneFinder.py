@@ -102,6 +102,8 @@ def getFirstTime(binary_warped, hist_slice=2, nwindows = 12, minpix = 60, margin
 
 
 def getFromRegion(binary_warped, coefs_L, coefs_R, margin = 100):
+    # TODO: Separate ploting from calculations...
+    
     # Assume you now have a new warped binary image 
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!

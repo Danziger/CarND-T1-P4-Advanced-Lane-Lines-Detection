@@ -23,7 +23,7 @@ def pipeline(img, M):
     
     filtered = np.zeros_like(hls_yw_filter)
     filtered[(hls_yw_filter == 1) | (laplacianSBlur >= 0.75) | (laplacianBlur >= 0.75)] = 1
-    
+
     REGION_MASK = np.array([[   
         (0, 400),
         (WIDTH, 400),
